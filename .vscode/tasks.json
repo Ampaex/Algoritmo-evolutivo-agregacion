@@ -8,7 +8,8 @@
             "type": "shell",
             "command": "g++",
             "args": [
-                "main.cpp"
+                "main.cpp",
+                "clases.cpp"
             ],
             "problemMatcher": []
         },
