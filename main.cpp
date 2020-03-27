@@ -5,23 +5,29 @@
 
 using namespace std;
 
-static int n; //Número de subproblemas
+
+int n=50; //Número de subproblemas
 int g; //Número de generaciones
 int dim; //Número de dimensiones
 
 float f; //Parámetro de mutación
 float cr; //Parámetro de cruce
-float vecindad;
+
 float ls; //Límite superior
 float li; //Límite inferior
 
+float vecindad=20;
+
+solucion z; //Mejor solución encontrada
+
 void parametrosDeEntrada();
-void inicializacion();
+void inicializacion(int n, int dim);
 
 //Código principal
 int main()
 {
-    inicializacion();
+
+    inicializacion(n, dim);
     parametrosDeEntrada();
 
 
@@ -43,7 +49,7 @@ void parametrosDeEntrada()
     cout << "Indica el NÚMERO DE DIMENSIONES: ";
     cin >> dim;
     cout << "Ha seleccionado " << dim << " dimensiones.\n\n";
-    
+
     cout << "=AJUSTES DE EVOLUCIÓN=\n" << endl;
 
     cout << "-Evolución diferencial-" << endl;
@@ -69,7 +75,7 @@ void parametrosDeEntrada()
     cout << "Ha seleccionado " << li << " como límite inferior.\n\n";
 }
 
-void inicializacion()
+void inicializacion(int n, int dim)
 {
     //Inicialización de los vectores peso
     peso pesos[n];
@@ -78,4 +84,23 @@ void inicializacion()
     {
         pesos[i] = peso(1-paso*i,0+paso*i);
     }
+
+    //Creación de subproblemas y asignación de pesos
+    //Durante la creación de cada subproblema se asignan sus vecinos
+
+    subproblema subproblemas[n];
+    for (int i = 0; i < n; i++)
+    {
+        subproblemas[i] = subproblema(n, pesos[i], pesos, vecindad);
+    }
+
+
+
+
+
+
+
+    //Selección de vecinos
+
+
 }

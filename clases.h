@@ -1,3 +1,9 @@
+#include <math.h>
+#include <algorithm>
+#include <array>
+
+
+
 class peso
 {
     public:
@@ -8,18 +14,18 @@ class peso
 
 class solucion
 {
-public:
-    float posicion; //Posición de la solución en el espacio
-
+    public:
+	float *vector; //Posición de la solución en el espacio
+    solucion();
+    solucion(float vectorp[]);
 };
 
-class subprob 
+class subproblema
 {
-public:
-    int n; //Número de subproblemas total
-    peso grupo; //Peso al que pertenece
-    solucion z; //Mejor solución
-    int b[];
-    subprob(int _n);
+    public:
+    peso id; //Peso al que pertenece
+    int *grupo; //Grupo de pesos vecinos
+    subproblema();
+    subproblema(int n, peso p, peso pesos[], float porcentaje_vecinos);
 
 };
