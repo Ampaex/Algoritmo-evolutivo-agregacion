@@ -1,7 +1,5 @@
 #include "clases.h"
 
-float floatAleatorio(int max, int min);
-
 //==PESO==
 peso::peso()
 {
@@ -87,6 +85,31 @@ solucion solucion::operator * (float const &obj){
 	return solucion(res,dimensiones);
 }
 
+int solucion::domina (solucion s){
+	solucion propia = solucion(vector, dimensiones);
+	if(dimensiones > 2 && s.dimensiones==dimensiones)
+	{
+		solucion objPropio = busquedaAobjetivo(propia);
+		solucion objAjeno = busquedaAobjetivo(s);
+		if(objPropio.vector[0]<objAjeno.vector[0] && objPropio.vector[1]<objAjeno.vector[1])
+		{
+			return 1;
+		}else return 0;
+	}
+	else if(dimensiones == 2 && s.dimensiones==dimensiones)
+	{
+		if(vector[0]<s.vector[0] && vector[1]<s.vector[1])
+		{
+			return 1;
+		}else return 0;
+	}
+	else
+	{
+		return -1;
+	}
+
+}
+
 //==SUBPROBLEMA==
 
 subproblema::subproblema(int n, peso p, peso pesos[], float porcentaje_vecinos, int dimensiones, int max, int min)
@@ -156,6 +179,35 @@ subproblema::subproblema(peso id, int *grupo, int num_vecinos, solucion x)
 
 }
 
+solucion busquedaAobjetivo(solucion busq)
+{
+	float f1 = busq.vector[0];									//Función del objetivo 1s
+	float sum = 0.0;
+	for(int i = 1; i<busq.dimensiones ; i++)									//Sumatorio de todos los elementos menos el primero
+	{
+		sum += busq.vector[i];
+	}
+	float g = 1.0 + ((9.0*sum)/(busq.dimensiones-1));						//Función G para calcular el objetivo 2
+
+	float h = 1.0 - sqrt(f1/g) - (f1/g) * sin(10.0*M_PI*f1);	//Función H para calcular el objetivo 2
+
+	float f2 = g * h;											//Función del objetivo 2
+
+	float ret[2] = {f1,f2};
+
+	return solucion(ret,2);
+}
+
+solucion * busquedaAobjetivo(solucion * busq, int longitud)
+{
+	if(busq[0].dimensiones==2) return busq;	//Comprueba si los vectores ya son de dos dimensiones
+	solucion * res = new solucion[longitud];
+	for(int i = 0; i < longitud; i++)
+	{
+		res[i] = busquedaAobjetivo(busq[i]);
+	}
+	return res;
+}
 
 float floatAleatorio(int max, int min)	//Generador aleatorio de un número decimal entre dos límites
 {

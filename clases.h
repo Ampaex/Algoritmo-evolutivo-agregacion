@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <math.h>
 
 
 
@@ -25,6 +26,7 @@ class solucion
     solucion operator - (solucion const &obj);		//Operador resta
     solucion operator + (solucion const &obj);		//Operador suma
     solucion operator * (float const &obj);			//Operador multiplicación escalar
+    int domina(solucion s);							//Devuelve 1 si domina a la solución, 0 si no la domina y -1 si no corresponden las dimensiones
 };
 
 class subproblema
@@ -39,7 +41,9 @@ class subproblema
 
 };
 
-float distanciaEuclidea(solucion s1, solucion s2); //Distancia euclidea entre dos soluciones
+float distanciaEuclidea(solucion s1, solucion s2);	//Distancia euclidea entre dos soluciones
 float distanciaEuclidea(solucion s);				//Distancia euclidea entre una solucion y el centro
-
+float floatAleatorio(int max, int min);				//Generador de número aleatorio en un rango
+solucion busquedaAobjetivo(solucion busq);			//Transforma una solución del espacio de búsqueda al de objetivos
+solucion * busquedaAobjetivo(solucion * busq, int longitud);
 

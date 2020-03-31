@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <vector>
 #include <string>
 #include <cmath>
@@ -8,8 +9,8 @@
 using namespace std;
 
 
-int n = 20; 		//Número de subproblemas
-int g = 200; 		//Número de generaciones
+int n = 30; 		//Número de subproblemas
+int g = 333; 		//Número de generaciones
 int dim = 6; 		//Número de dimensiones
 
 float f = 0.5; 		//Parámetro de mutación
@@ -26,23 +27,27 @@ subproblema * subp;	//Puntero al vector de subproblemas (tamaño n)
 
 solucion z; 		//Mejor solución encontrada
 
+ofstream archivoOut;	//Declaración de archivo de salida con las soluciones de todas las iteraciones
+ofstream archivoBest;	//Declaración del archivo de salida con las mejores soluciones
+
 void parametrosDeEntrada();
 void inicializacion(int n, int dim, int max, int min);
-solucion busquedaAobjetivo(solucion busq);
-float tchebycheff(subproblema subpro);
 void operacionED();
 void ejecucion();
+float tchebycheff(subproblema subpro);							//Devuelve la distancia de tchebycheff
+void imprimeSolucion(solucion s);								//Escribe en el archivo de salida la solución(Si no es de objetivo lo convierte)
+solucion * solucionesNoDominadas(subproblema *subproblemas);	//Devuelve el conjunto de soluciones no dominadas
+void imprimeSoluciones(solucion * soluciones);					//Imprime un conjunto de soluciones
+void imprimeSoluciones(subproblema * subproblemas);				//Imprime las soluciones de un conjunto de problemas
 
 //Código principal
 int main()
 {
+	archivoOut.open("salida.out");
 	srand(semilla);					//Inicialización de los números aleatorios con semilla
 	inicializacion(n, dim, ls, li);	//Inicialización del problema
 	ejecucion();
 	parametrosDeEntrada();			//Recogida de parámetros de entrada
-
-
-
 
     return 0;
 }
@@ -155,11 +160,15 @@ void inicializacion(int n, int dim, int max, int min)
 
 void ejecucion(){
 
+	imprimeSoluciones(subp);
+
+
 	for (int i = 0; i < g; i++)
 	{
 		cout<< "Gen: " << i <<endl;
 		operacionED();
 		cout<<"z: "<<z.vector[0]<<","<<z.vector[1];
+		imprimeSoluciones(subp);
 	}
 
 
@@ -265,31 +274,6 @@ void operacionED()									//Mutación y cruce de evolución diferencial
 		}
 		cout << endl;
 	}
-
-
-}
-
-solucion busquedaAobjetivo(solucion busq)
-{
-	if(busq.vector[0]<0)
-	{
-	cout<<"Aviso";
-	}
-	float f1 = busq.vector[0];									//Función del objetivo 1s
-	float sum = 0.0;
-	for(int i = 1; i<busq.dimensiones ; i++)									//Sumatorio de todos los elementos menos el primero
-	{
-		sum += busq.vector[i];
-	}
-	float g = 1.0 + ((9.0*sum)/(busq.dimensiones-1));						//Función G para calcular el objetivo 2
-
-	float h = 1.0 - sqrt(f1/g) - (f1/g) * sin(10.0*M_PI*f1);	//Función H para calcular el objetivo 2
-
-	float f2 = g * h;											//Función del objetivo 2
-
-	float ret[2] = {f1,f2};
-
-	return solucion(ret,2);
 }
 
 float tchebycheff(subproblema subproblem)
@@ -307,13 +291,71 @@ float tchebycheff(subproblema subproblem)
 
 	re = subproblem.id.vector[0]*abs(solu.vector[0]-z.vector[0]);	// lambda*|f1-z|
 	re2 = subproblem.id.vector[1]*abs(solu.vector[1]-z.vector[1]);
-	if(re<re2){
+	if(re<re2)
+	{
 		re = re2;
 	}
 	return re;
 }
 
+void imprimeSolucion(solucion s)
+{
+	solucion a = s;
+	if(s.dimensiones!=2){
+		a = busquedaAobjetivo(s);
+	}
+	for(int b = 0; b < a.dimensiones; b++)
+	{
+		archivoOut << a.vector[b] << "\t";
+	}
+	archivoOut << endl;
+}
 
+solucion * solucionesNoDominadas(subproblema *subproblemas)//Tiene que computar soluciones de objetivo
+{
+	int contador = 0;							//Servirá para almacenar las soluciones consecutivamente en el vector
+	solucion * res = new solucion[n];			//Soluciones de respuesta no dominadas
+	solucion * solus = new solucion[n];			//Almacenamos todas las soluciones del espacio de búsqueda
+	for (int i = 0; i < n; i++) solus[i] = subproblemas[i].x;
+	solucion * solusObj = busquedaAobjetivo(solus,n);	//Convertimos todas las soluciones al espacio de objetivo
+
+	for(int i = 0;i < n;i++)					//Comprobamos una por una si la solución es dominada por alguna otra
+	{
+		for (int j = 0; j < n; j++)
+		{
+			if(solusObj[j].domina(solusObj[i]))
+			{
+				break;
+			}
+			if(j==(n-1))
+			{
+				res[contador] = solusObj[i];
+				contador++;
+			}
+		}
+	}
+	return res;
+}
+
+void imprimeSoluciones(solucion * soluciones){
+	for(int i = 0; i < n; i++)
+	{
+		if(soluciones[i].dimensiones!=0)
+		{
+			imprimeSolucion(soluciones[i]);
+		}else break;
+	}
+}
+
+void imprimeSoluciones(subproblema * subproblemas){
+	for(int i = 0; i < n; i++)
+	{
+		if(subproblemas[i].x.dimensiones!=0)
+		{
+			imprimeSolucion(subproblemas[i].x);
+		}else break;
+	}
+}
 
 
 
