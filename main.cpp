@@ -9,26 +9,27 @@
 using namespace std;
 
 
-int n = 30; 		//Número de subproblemas
-int g = 333; 		//Número de generaciones
-int dim = 6; 		//Número de dimensiones
+int n = 30; 					//Número de subproblemas
+int g = 333; 					//Número de generaciones
+int dim = 6; 					//Número de dimensiones
 
-float f = 0.5; 		//Parámetro de mutación
-float cr = 0.5; 	//Parámetro de cruce
+float f = 0.5; 					//Parámetro de mutación
+float cr = 0.5; 				//Parámetro de cruce
 
-float ls = 1; 		//Límite superior
-float li = 0; 		//Límite inferior
+float ls = 1; 					//Límite superior
+float li = 0; 					//Límite inferior
 
-float vecindad=20; 	//Porcentaje de vecinos de cada subproblema
+float vecindad=20; 				//Porcentaje de vecinos de cada subproblema
 
 float semilla = 1695;
 
-subproblema * subp;	//Puntero al vector de subproblemas (tamaño n)
+subproblema * subp;				//Puntero al vector de subproblemas (tamaño n)
 
-solucion z; 		//Mejor solución encontrada
+solucion z;						//Mejor solución ideal encontrada
+subproblema * mejoresSubproblemas;	//Mejores subproblemas encontrados
 
-ofstream archivoOut;	//Declaración de archivo de salida con las soluciones de todas las iteraciones
-ofstream archivoBest;	//Declaración del archivo de salida con las mejores soluciones
+ofstream archivoOut;			//Declaración de archivo de salida con las soluciones de todas las iteraciones
+ofstream archivoBest;			//Declaración del archivo de salida con las mejores soluciones
 
 void parametrosDeEntrada();
 void inicializacion(int n, int dim, int max, int min);
@@ -36,18 +37,22 @@ void operacionED();
 void ejecucion();
 float tchebycheff(subproblema subpro);							//Devuelve la distancia de tchebycheff
 void imprimeSolucion(solucion s);								//Escribe en el archivo de salida la solución(Si no es de objetivo lo convierte)
-solucion * solucionesNoDominadas(subproblema *subproblemas);	//Devuelve el conjunto de soluciones no dominadas
+void imprimeNoDominadas(subproblema *subproblemas);				//Imprime el conjunto de soluciones no dominadas
 void imprimeSoluciones(solucion * soluciones);					//Imprime un conjunto de soluciones
 void imprimeSoluciones(subproblema * subproblemas);				//Imprime las soluciones de un conjunto de problemas
+void compruebaMejoresSubproblemas();
 
 //Código principal
 int main()
 {
 	archivoOut.open("salida.out");
+	archivoBest.open("salidaTOP.out");
 	srand(semilla);					//Inicialización de los números aleatorios con semilla
 	inicializacion(n, dim, ls, li);	//Inicialización del problema
 	ejecucion();
+	imprimeNoDominadas(mejoresSubproblemas);
 	parametrosDeEntrada();			//Recogida de parámetros de entrada
+
 
     return 0;
 }
@@ -69,7 +74,7 @@ void parametrosDeEntrada()
     cout << "Ha seleccionado " << dim << " dimensiones.\n\n";
 
     cout << "=AJUSTES DE EVOLUCIÓN=\n" << endl;
-
+;
     cout << "-Evolución diferencial-" << endl;
     cout << "Defina el parámetro de mutación F:";
     cin >> f;
@@ -100,8 +105,8 @@ void parametrosDeEntrada()
 
 void inicializacion(int n, int dim, int max, int min)
 {
-    //Inicialización de los vectores peso
-    peso pesos[n];
+    peso pesos[n]; 							//Inicialización de los vectores peso
+    mejoresSubproblemas = new subproblema[n];	//Reserva de memoria para el puntero a mejoresSoluciones
     float paso = (float)1/(float)(n-1);
     for(int i =0; i<n ;i++)
     {
@@ -161,7 +166,7 @@ void inicializacion(int n, int dim, int max, int min)
 void ejecucion(){
 
 	imprimeSoluciones(subp);
-
+	compruebaMejoresSubproblemas();
 
 	for (int i = 0; i < g; i++)
 	{
@@ -169,6 +174,7 @@ void ejecucion(){
 		operacionED();
 		cout<<"z: "<<z.vector[0]<<","<<z.vector[1];
 		imprimeSoluciones(subp);
+		compruebaMejoresSubproblemas();
 	}
 
 
@@ -276,7 +282,7 @@ void operacionED()									//Mutación y cruce de evolución diferencial
 	}
 }
 
-float tchebycheff(subproblema subproblem)
+float tchebycheff(subproblema subproblem)	//Nos devuelve un valor que es menor cuanto mas cerca nos encontremos de la solución
 {
 	float re;						//Variable de retorno
 	float re2;
@@ -311,15 +317,15 @@ void imprimeSolucion(solucion s)
 	archivoOut << endl;
 }
 
-solucion * solucionesNoDominadas(subproblema *subproblemas)//Tiene que computar soluciones de objetivo
+void imprimeNoDominadas(subproblema *subproblemas)	//Tiene que computar soluciones de objetivo
 {
-	int contador = 0;							//Servirá para almacenar las soluciones consecutivamente en el vector
-	solucion * res = new solucion[n];			//Soluciones de respuesta no dominadas
-	solucion * solus = new solucion[n];			//Almacenamos todas las soluciones del espacio de búsqueda
+	int contador = 0;										//Servirá para almacenar las soluciones consecutivamente en el vector
+	solucion * res = new solucion[n];						//Soluciones de respuesta no dominadas
+	solucion * solus = new solucion[n];						//Almacenamos todas las soluciones del espacio de búsqueda
 	for (int i = 0; i < n; i++) solus[i] = subproblemas[i].x;
-	solucion * solusObj = busquedaAobjetivo(solus,n);	//Convertimos todas las soluciones al espacio de objetivo
+	solucion * solusObj = busquedaAobjetivo(solus,n);		//Convertimos todas las soluciones al espacio de objetivo
 
-	for(int i = 0;i < n;i++)					//Comprobamos una por una si la solución es dominada por alguna otra
+	for(int i = 0;i < n;i++)								//Comprobamos una por una si la solución es dominada por alguna otra
 	{
 		for (int j = 0; j < n; j++)
 		{
@@ -334,7 +340,16 @@ solucion * solucionesNoDominadas(subproblema *subproblemas)//Tiene que computar 
 			}
 		}
 	}
-	return res;
+	for(int i = 0; i < contador; i++)
+	{
+		for(int b = 0; b < res[0].dimensiones; b++)
+		{
+			archivoBest << res[i].vector[b] << "\t";
+		}
+		archivoBest << endl;
+	}
+
+
 }
 
 void imprimeSoluciones(solucion * soluciones){
@@ -357,5 +372,19 @@ void imprimeSoluciones(subproblema * subproblemas){
 	}
 }
 
+void compruebaMejoresSubproblemas(){
+	if(mejoresSubproblemas[0].x.dimensiones==0)
+	{
+		for (int i = 0; i < n; i++) mejoresSubproblemas[i] = subp[i];
+		return;
+	}
+	for (int i = 0; i < n; i++)
+	{
+		if(tchebycheff(subp[i]) < tchebycheff(mejoresSubproblemas[i]))
+		{
+			mejoresSubproblemas[i] = subp[i];
+		}
+	}
+}
 
 
