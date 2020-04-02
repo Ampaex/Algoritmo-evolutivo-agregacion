@@ -9,17 +9,17 @@
 using namespace std;
 
 
-int n = 30; 					//Número de subproblemas
-int g = 333; 					//Número de generaciones
-int dim = 6; 					//Número de dimensiones
+int n = 20; 					//Número de subproblemas
+int g = 200; 					//Número de generaciones
+int dim = 30; 					//Número de dimensiones
 
 float f = 0.5; 					//Parámetro de mutación
 float cr = 0.5; 				//Parámetro de cruce
 
+float vecindad=20; 				//Porcentaje de vecinos de cada subproblema
+
 float ls = 1; 					//Límite superior
 float li = 0; 					//Límite inferior
-
-float vecindad=20; 				//Porcentaje de vecinos de cada subproblema
 
 float semilla = 1695;
 
@@ -40,7 +40,8 @@ void imprimeSolucion(solucion s);								//Escribe en el archivo de salida la so
 void imprimeNoDominadas(subproblema *subproblemas);				//Imprime el conjunto de soluciones no dominadas
 void imprimeSoluciones(solucion * soluciones);					//Imprime un conjunto de soluciones
 void imprimeSoluciones(subproblema * subproblemas);				//Imprime las soluciones de un conjunto de problemas
-void compruebaMejoresSubproblemas();
+void compruebaMejoresSubproblemas();							//Actualiza la lista de mejores subproblemas
+void graficaGNUplot();											//Grafica nuestras soluciones finales no dominadas
 
 //Código principal
 int main()
@@ -51,6 +52,7 @@ int main()
 	inicializacion(n, dim, ls, li);	//Inicialización del problema
 	ejecucion();
 	imprimeNoDominadas(mejoresSubproblemas);
+	graficaGNUplot();
 	parametrosDeEntrada();			//Recogida de parámetros de entrada
 
 
@@ -387,4 +389,14 @@ void compruebaMejoresSubproblemas(){
 	}
 }
 
+void graficaGNUplot(){
+	//Se crea una tubería para acceder a GNUplot
+	FILE *pipe = popen("gnuplot -persist","w");
 
+	//Ajustes
+	fprintf(pipe, "set palette gray negative\n");
+
+	//Graficar
+	fprintf(pipe, "plot 'salidaTOP.out'\n");
+	fflush(pipe);
+}
