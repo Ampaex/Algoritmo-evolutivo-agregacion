@@ -21,14 +21,14 @@ solucion::solucion()
 	vector = NULL;
 	dimensiones = 0;
 }
-solucion::solucion(const solucion *a)
+solucion::solucion(solucion *a)
 {
-	vector = new float[a->dimensiones];
-	for (int i = 0; i < a->dimensiones; i++)
+	vector = new float[a[0].dimensiones];
+	for (int i = 0; i < a[0].dimensiones; i++)
 	{
-		vector[i] = a->vector[i];
+		vector[i] = a[0].vector[i];
 	}
-	dimensiones=a->dimensiones;
+	dimensiones=a[0].dimensiones;
 }
 
 solucion::solucion(float vectorp[], int p)
@@ -51,7 +51,7 @@ solucion::solucion(int max, int min, int dimensiones)
 	this->dimensiones = dimensiones;
 }
 
-solucion solucion:: operator - (solucion const &obj)
+solucion solucion:: operator - (solucion obj)
 {
 	float res[dimensiones] = {0};
 	if(dimensiones == obj.dimensiones)
@@ -64,7 +64,7 @@ solucion solucion:: operator - (solucion const &obj)
 	return solucion(res,dimensiones);
 }
 
-solucion solucion:: operator + (solucion const &obj)
+solucion solucion:: operator + (solucion obj)
 {
 	float res[dimensiones] = {0};
 	if(dimensiones == obj.dimensiones)
@@ -76,7 +76,7 @@ solucion solucion:: operator + (solucion const &obj)
 	}
 	return solucion(res,dimensiones);
 }
-solucion solucion::operator * (float const &obj){
+solucion solucion::operator * (float obj){
 	float res[dimensiones] = {0};
 	for (int i = 0; i < dimensiones; i++)
 	{
@@ -116,7 +116,7 @@ subproblema::subproblema(int n, peso p, peso pesos[], float porcentaje_vecinos, 
 {
     id=p; 																		//Asignación del peso que le identifica
     int num_de_vecinos = (int)(n*(porcentaje_vecinos/100));						//Número de vecinos que puede tener
-    float distancias[n];
+    float distancias[n];														//Array donde ir guardando todas las distancias calculadas
     for (int i = 0; i < n; i++)													//Calculamos todas las distancias entre los vectores peso
     {
         distancias[i] = sqrt(pow(pesos[i].vector[0]-p.vector[0], 2) + pow(pesos[i].vector[1]-p.vector[1], 2));
@@ -175,7 +175,12 @@ subproblema::subproblema(peso id, int *grupo, int num_vecinos, solucion x)
 {
 	this->id = id;
 	this->x = x;
-	this->grupo = grupo;
+	this->grupo = new int[num_vecinos];
+	for(int i = 0; i < num_vecinos; i++)
+	{
+		this->grupo[i] = grupo[i];
+	}
+
 
 }
 
@@ -183,11 +188,11 @@ solucion busquedaAobjetivo(solucion busq)
 {
 	float f1 = busq.vector[0];									//Función del objetivo 1s
 	float sum = 0.0;
-	for(int i = 1; i<busq.dimensiones ; i++)									//Sumatorio de todos los elementos menos el primero
+	for(int i = 1; i<busq.dimensiones ; i++)					//Sumatorio de todos los elementos menos el primero
 	{
 		sum += busq.vector[i];
 	}
-	float g = 1.0 + ((9.0*sum)/(busq.dimensiones-1));						//Función G para calcular el objetivo 2
+	float g = 1.0 + ((9.0*sum)/(busq.dimensiones-1));			//Función G para calcular el objetivo 2
 
 	float h = 1.0 - sqrt(f1/g) - (f1/g) * sin(10.0*M_PI*f1);	//Función H para calcular el objetivo 2
 

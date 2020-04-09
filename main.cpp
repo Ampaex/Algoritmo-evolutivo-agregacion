@@ -5,23 +5,24 @@
 #include <cmath>
 #include <math.h>
 #include "clases.h"
+#include <unistd.h>
 
 using namespace std;
 
 
-int n = 20; 					//Número de subproblemas
-int g = 200; 					//Número de generaciones
+int n = 40; 					//Número de subproblemas
+int g = 100; 					//Número de generaciones
 int dim = 30; 					//Número de dimensiones
 
-float f = 0.5; 					//Parámetro de mutación
-float cr = 0.5; 				//Parámetro de cruce
+float f = 0.55; 				//Parámetro de mutación
+float cr = 0.6; 				//Parámetro de cruce
 
-float vecindad=20; 				//Porcentaje de vecinos de cada subproblema
+float vecindad=40; 				//Porcentaje de vecinos de cada subproblema
 
 float ls = 1; 					//Límite superior
 float li = 0; 					//Límite inferior
 
-float semilla = 1695;
+float semilla = 0.3;
 
 subproblema * subp;				//Puntero al vector de subproblemas (tamaño n)
 
@@ -30,24 +31,36 @@ subproblema * mejoresSubproblemas;	//Mejores subproblemas encontrados
 
 ofstream archivoOut;			//Declaración de archivo de salida con las soluciones de todas las iteraciones
 ofstream archivoBest;			//Declaración del archivo de salida con las mejores soluciones
+ofstream archivoZ;				//Declaración del archivo de salida con las mejores soluciones
+ofstream salidaDebug;
+ofstream iteracion;
 
 void parametrosDeEntrada();
 void inicializacion(int n, int dim, int max, int min);
 void operacionED();
 void ejecucion();
-float tchebycheff(subproblema subpro);							//Devuelve la distancia de tchebycheff
+double tchebycheff(solucion soluc, peso peso);							//Devuelve la distancia de tchebycheff
 void imprimeSolucion(solucion s);								//Escribe en el archivo de salida la solución(Si no es de objetivo lo convierte)
 void imprimeNoDominadas(subproblema *subproblemas);				//Imprime el conjunto de soluciones no dominadas
 void imprimeSoluciones(solucion * soluciones);					//Imprime un conjunto de soluciones
 void imprimeSoluciones(subproblema * subproblemas);				//Imprime las soluciones de un conjunto de problemas
 void compruebaMejoresSubproblemas();							//Actualiza la lista de mejores subproblemas
 void graficaGNUplot();											//Grafica nuestras soluciones finales no dominadas
+void graficaSalida();
+void graficaIteracion(FILE *pipe2);
+void graficaIteracion1(FILE *pipe2);
+
+
 
 //Código principal
 int main()
 {
 	archivoOut.open("salida.out");
+	archivoZ.open("salidaZ.out");
 	archivoBest.open("salidaTOP.out");
+	salidaDebug.open("salidaDebug.out");
+	iteracion.open("iteracion.out");
+
 	srand(semilla);					//Inicialización de los números aleatorios con semilla
 	inicializacion(n, dim, ls, li);	//Inicialización del problema
 	ejecucion();
@@ -107,13 +120,28 @@ void parametrosDeEntrada()
 
 void inicializacion(int n, int dim, int max, int min)
 {
-    peso pesos[n]; 							//Inicialización de los vectores peso
-    mejoresSubproblemas = new subproblema[n];	//Reserva de memoria para el puntero a mejoresSoluciones
+    peso pesos[n]; 								//Inicialización de los vectores peso
+    mejoresSubproblemas = new subproblema[n];	//Reserva de memoria para el puntero a mejoresSubproblemas
     float paso = (float)1/(float)(n-1);
     for(int i =0; i<n ;i++)
     {
-        pesos[i] = peso(1-paso*i,0+paso*i);
+        //pesos[i] = peso(1-paso*i,0+paso*i);
+    	pesos[i] = peso(0+paso*i,1-paso*i);
     }
+
+    //[DEBUG] Muestra todos los pesos
+    salidaDebug << "EJECUCIÓN CON 30 SUBPROBLEMAS 100 GENERACIONES Y 30 DIMENSIONES / F = 0.5 /CR = 0.5 /VECINDAD = 20%"<<endl;
+    salidaDebug<<"===INICIALIZACIÓN==="<<endl;
+    salidaDebug << "===PESOS==="<<endl;
+    for (int i = 0; i < n; i++)
+    {
+		for (int j = 0; j < 2; ++j)
+		{
+			salidaDebug << pesos[i].vector[j] << "\t";
+		}
+		salidaDebug << endl;
+	}
+
 
     //Creación de subproblemas y asignación de pesos
     //Durante la creación de cada subproblema se asignan sus vecinos
@@ -130,16 +158,46 @@ void inicializacion(int n, int dim, int max, int min)
     	subp[i] = subproblemas[i];
     }
 
-    /*[DEBUG]IMPRIME LAS SOLUCIONES DE TODOS LOS SUBPROBLEMAS
+    //[DEBUG]IMPRIME LAS SOLUCIONES DE TODOS LOS SUBPROBLEMAS
+    salidaDebug << "===SUBPROBLEMAS==="<< endl << "VALORES ALEATORIOS PARA ESPACIO DE BÚSQUEDA" << endl;
     for (int i = 0; i < n; ++i)
     {
-    	cout << "Subproblema" << i << ":";
+    	salidaDebug << "Subproblema "<<i<<": "<<endl;
 		for (int j = 0; j < dim; ++j)
 		{
 			cout << subproblemas[i].x.vector[j] << ",";
+			salidaDebug << subproblemas[i].x.vector[j] << "\t";
 		}
 		cout<<endl;
+		salidaDebug<<endl<<endl;
+	}
+
+    int n_vecinos = (int)((vecindad/100)*n);
+    //[DEBUG]IMPRIME TODOS LOS VECINOS
+    salidaDebug << "===VECINOS==="<< endl << "HACE REFERENCIA A SU POSICIÓN EN EL ARRAY" << endl << "DESE CUENTA DE QUE NO SALEN ORDENADOS"<<endl;
+	for (int i = 0; i < n; ++i)
+	{
+		salidaDebug << "Subproblema "<<i<<": "<<endl;
+		for (int j = 0; j < n_vecinos; ++j)
+		{
+			salidaDebug << subproblemas[i].grupo[j] << "\t";
+		}
+		salidaDebug<<endl;
+	}
+    /*[DEBUG]IMPRIME LAS SOLUCIONES DE TODOS LOS SUBPROBLEMAS OBJETIVO
+	for (int i = 0; i < n; ++i)
+	{
+		solucion s = busquedaAobjetivo(subproblemas[i].x);
+		cout << "Subproblema " << i << ":";
+		for (int j = 0; j < dim; ++j)
+		{
+			cout << s.vector[j] << ",";
+			archivoOut << s.vector[j] << "\t";
+		}
+		cout<<endl;
+		archivoOut<<endl;
 	}*/
+
 
     //Búsqueda de la mejor solución de la inicialización (z)
     solucion temp;
@@ -161,36 +219,62 @@ void inicializacion(int n, int dim, int max, int min)
     }
 
    //[DEBUG] IMPRIME EL VECTOR Z
-    cout << "Solución Z primera iteración:" << z.vector[0] << "," << z.vector[1];
+    salidaDebug << endl << "Solución Z primera iteración: " << z.vector[0] << "\t" << z.vector[1]<< endl << endl;
+    //graficaSalida();
+
 
 }
 
 void ejecucion(){
 
-	imprimeSoluciones(subp);
-	compruebaMejoresSubproblemas();
+	//Se crea una tubería para acceder a GNUplot
+	FILE *pipe2 = popen("gnuplot -persist","w");
 
+	graficaIteracion1(pipe2);
+	compruebaMejoresSubproblemas();
+	salidaDebug << "=======EJECUCIÓN DEL PROGRAMA=======" <<endl;
 	for (int i = 0; i < g; i++)
 	{
-		cout<< "Gen: " << i <<endl;
+		cout<< "GENERACIÓN: " << i <<endl;
+		salidaDebug<< "GENERACIÓN: " << i <<endl;
 		operacionED();
-		cout<<"z: "<<z.vector[0]<<","<<z.vector[1];
+		cout<<"z: "<<z.vector[0]<<","<<z.vector[1]<<endl;
 		imprimeSoluciones(subp);
 		compruebaMejoresSubproblemas();
+		graficaIteracion(pipe2);
+		//[DEBUG] IMPRIME SOLUCIONES DE TODOS LOS SUBPROBLEMAS
+		salidaDebug << "===SUBPROBLEMAS==="<< endl;
+		for (int i = 0; i < n; ++i)
+		{
+			cout << "Subproblema "<<i<<": "<<endl;
+			salidaDebug << "Subproblema "<<i<<": "<<endl;
+			for (int j = 0; j < dim; ++j)
+			{
+				cout << subp[i].x.vector[j] << ",";
+				salidaDebug << subp[i].x.vector[j] << "\t";
+			}
+			cout<<endl;
+			salidaDebug<<endl<<endl;
+		}
 	}
-
+	imprimeSoluciones(subp);
 
 }
 
-void operacionED()									//Mutación y cruce de evolución diferencial
+void operacionED()	//Mutación y cruce de evolución diferencial
 {
+	//----------------------------------------------CÁLCULOS PREVIOS Y GENERACIÓN DE LAS POSICIONES ALEATORIAS PARA LA MUTACIÓN----------------------------------------
+
+	//Calcula cuantos vecinos tiene cada subproblema
 	int num_vecinos = (int)((vecindad/100)*n);
+	//Envía un aviso si no hay un suficiente número de vecinos
 	if(num_vecinos < 3)
 	{
 		cout << "No existen suficientes vecinos para ejecutar la evolución diferencial(3), aumente el número de subproblemas o el porcentaje de vecindad";
 		return;
 	}
 
+	//Genera 3 enteros aleatorios para poder escoger las 3 soluciones para la mutación
 	for (int i = 0; i < n; ++i)
 	{
 		int pos[3] = {0};							//3 posiciones aleatorias de entre los vecinos
@@ -212,11 +296,13 @@ void operacionED()									//Mutación y cruce de evolución diferencial
 			}
 		}
 
-		int tm[3] = {subp[i].grupo[pos[0]],subp[i].grupo[pos[1]],subp[i].grupo[pos[2]]};
+		//-----------------------------------------RECOGIDA DE LAS SOLUCIONES QUE HAN TOCADO ACTUAR EN LA MUTACIÓN Y MUTACIÓN----------------------------------------
 
-		solucion m = subp[tm[0]].x + (subp[tm[1]].x - subp[tm[2]].x)*f;		//Mutación
+		int tm[3] = {subp[i].grupo[pos[0]],subp[i].grupo[pos[1]],subp[i].grupo[pos[2]]};	//Va al grupo de vecinos y coge las posiciones aleatorias que nos han salido
 
-		for(int j =0; j<m.dimensiones; j++)
+		solucion m = subp[tm[0]].x + (subp[tm[1]].x - subp[tm[2]].x)*f;						//Función de mutación
+
+		for(int j =0; j<m.dimensiones; j++)													//Limitación de los componentes del nuevo vector entre el límite superior e inferior
 		{
 			if(m.vector[j]<li)
 			{
@@ -228,52 +314,72 @@ void operacionED()									//Mutación y cruce de evolución diferencial
 			}
 		}
 
-		solucion previa = subp[i].x;
+		//-----------------------------------------------------CREACIÓN DE VARIABLES TEMPORALES, CRUCE Y ALMACENAMIENTO---------------------------------------------------
 
-		float trial_vector[previa.dimensiones];
-		int delta = (int)rand()% previa.dimensiones;
+		solucion previa = subp[i].x;							//Solución original.
 
-		for (int j = 0; j < previa.dimensiones; ++j)			//Cruce según criterio
+		float trial_vector[previa.dimensiones];					//Array para ir guardando los valores de la solución final.
+		int delta = (int)rand()% previa.dimensiones;			//El valor delta del cruce, un entero aleatorio con rango 0 hasta el número de dimensiones del espacio de búsqueda.
+
+		for (int j = 0; j < previa.dimensiones; ++j)			//Cruce según criterio.
 		{
-			float rng = (float)(rand()%99)/100; 				//Número entre 0 y 1
-			if(rng<=cr||j == delta){
+			float rng = (float)(rand()%99)/100; 				//Número aleatorio entre 0 y 1.
+
+			if(rng<=cr||j == delta)
+			{
 				trial_vector[j] = m.vector[j];
-			}else if(rng>cr||j != delta){
+			}
+			else if(rng>cr||j != delta)
+			{
 				trial_vector[j] = previa.vector[j];
 			}
 		}
-		solucion trial_solution = solucion(trial_vector, previa.dimensiones);
 
-		subproblema nuevo_sub = subproblema(subp[i].id, subp[i].grupo, num_vecinos, trial_solution);
+		solucion trial_solution = solucion(trial_vector, previa.dimensiones);							//Creación de la nueva solución con los valores cruzados.
 
-		if(tchebycheff(nuevo_sub)<tchebycheff(subp[i]))	//Evaluación de la nueva solución con respecto a la anterior
+
+		//----------------------------------------EVALUACIÓN DE LA NUEVA SOLUCIÓN, ACTUALIZACIÓN DE Z, Y EVALUACIÓN PARA LOS SUBPROBLEMAS VECINOS-----------------------
+
+		//Comparación de la nueva solución con la anterior (Van dentro de un subproblema para que tchebycheff pueda coger su vector peso)
+		if(tchebycheff(trial_solution, subp[i].id) < tchebycheff(previa, subp[i].id))
 		{
-			subp[i].x = trial_solution;
-
-			solucion temp = busquedaAobjetivo(subp[i].x);		//Recalcula z
-			if(temp.vector[0]<z.vector[0])
+			for(int g = 0; g < dim; g++)
 			{
-				float tempa[2] = {temp.vector[0], z.vector[1]};
-				z = solucion(tempa,2);
-			}
-			if(temp.vector[1]<z.vector[1])
-			{
-				float tempa[2] = {z.vector[0], temp.vector[1]};
-				z = solucion(tempa,2);
-			}
-
-			for (int j = 0; j < num_vecinos; j++)		//Comprueba si la solución encontrada también mejora a la de los vecinos
-			{
-				int indice = subp[i].grupo[j];
-				if(tchebycheff(subp[indice])>tchebycheff(subp[i]))
-				{
-					subp[indice].x = subp[i].x;
-				}
+				subp[i].x.vector[g] = trial_solution.vector[g];	//Si lo mejora, sustituye la solución de este subproblema por la nueva mejorada
 			}
 		}
-	}
 
-	for(int i = 0; i < n; i++)		//[DEBUG]Imprime todas las soluciones
+		//Comprobación de Z
+		solucion temp = busquedaAobjetivo(trial_solution);	//Trasladamos la nueva solución al espacio de objetivos y la guardamos en temp
+		if(temp.vector[0]<z.vector[0])						//Comprueba si mejora a la coordenada 'x' de z, si es así lo sustituye
+		{
+			float tempz[2] = {temp.vector[0], z.vector[1]};	//Almacenamiento previo en un array de la nueva X y la antigua Y de Z
+			z = solucion(tempz,2);							//Construye y guarda la nueva solución Z, dado el array y las dimensiones del array
+		}
+		if(temp.vector[1]<z.vector[1])						//Comprueba si mejora a la coordenada 'y' de z, si es así lo sustituye
+		{
+			float tempz[2] = {z.vector[0], temp.vector[1]};	//Almacenamiento previo en un array de la antigua X y la nueva Y de Z
+			z = solucion(tempz,2);							//Construye y guarda la nueva solución Z, dado el array y las dimensiones del array
+		}
+
+		//Comprueba si la solución encontrada también mejora a la de los vecinos, recorre todos los vecinos almacenados en el grupo de vecinos del subproblema.
+		for (int j = 0; j < num_vecinos; j++)
+		{
+			solucion temp2 = busquedaAobjetivo(subp[39].x);
+			int indice = subp[i].grupo[j];							//Posición del subproblema a comprobar, grupo es un puntero a el array de vecinos.
+			if(tchebycheff(trial_solution, subp[indice].id) < tchebycheff(subp[indice].x, subp[indice].id))	//Comparación para saber si la nueva solución también mejora a la de ese vecino
+			{
+				for(int g = 0; g < dim; g++)						//Si lo mejora, su solución es sustituída por la nueva. Bucle para copiar todos los componentes
+				{
+					subp[indice].x.vector[g] = trial_solution.vector[g];
+				}
+
+			}
+		}
+
+	}
+	/*//[DEBUG]Imprime todas las soluciones
+	for(int i = 0; i < n; i++)
 	{
 		cout<< "Sub "<<i<<": ";
 		for(int j = 0;j < 2;j++)
@@ -281,42 +387,46 @@ void operacionED()									//Mutación y cruce de evolución diferencial
 			cout << busquedaAobjetivo(subp[i].x).vector[j] << ",";
 		}
 		cout << endl;
-	}
+	}*/
 }
 
-float tchebycheff(subproblema subproblem)	//Nos devuelve un valor que es menor cuanto mas cerca nos encontremos de la solución
+double tchebycheff(solucion soluc, peso peso)	//Dado un subproblema calcula la distancia de tchebycheff de su solución hasta la solución Z(La mejor ideal encontrada hasta ahora) para un peso.
 {
-	float re;						//Variable de retorno
-	float re2;
-	solucion solu;
-	if(subproblem.x.dimensiones>2)	//Hace válida la función para espacio de búsqueda y objetivos
-	{
-		solu = busquedaAobjetivo(subproblem.x);
-	}else
-	{
-		solu = subproblem.x;
-	}
+	double componenteX = 0.0;	//Variable de retorno
+	double componenteY = 0.0;	//Variable auxiliar
+	solucion solucionObj;			//Variable auxiliar
 
-	re = subproblem.id.vector[0]*abs(solu.vector[0]-z.vector[0]);	// lambda*|f1-z|
-	re2 = subproblem.id.vector[1]*abs(solu.vector[1]-z.vector[1]);
-	if(re<re2)
+	//A continuación trasladamos nuestra solución desde el espacio de búsqueda al espacio de objetivos.
+	solucionObj = busquedaAobjetivo(soluc);
+
+	//Cálculo de la función de tchebycheff para las dos dimensiones del espacio de objetivos
+	componenteX = peso.vector[0] * abs(solucionObj.vector[0] - z.vector[0]);	// lambda[0] * |f1 - z[0]|  coordenada x
+	componenteY = peso.vector[1] * abs(solucionObj.vector[1] - z.vector[1]);	// lambda[1] * |f2 - z[1]|  coordenada y
+
+	//Se devuelve el componente que sea mayor
+	if(componenteX > componenteY)
 	{
-		re = re2;
+		return componenteX;
 	}
-	return re;
+	else
+	{
+		return componenteY;
+	}
 }
 
 void imprimeSolucion(solucion s)
 {
 	solucion a = s;
-	if(s.dimensiones!=2){
-		a = busquedaAobjetivo(s);
-	}
+//	if(s.dimensiones!=2){
+//		a = busquedaAobjetivo(s);
+//	}
 	for(int b = 0; b < a.dimensiones; b++)
 	{
 		archivoOut << a.vector[b] << "\t";
+		salidaDebug << a.vector[b] << "\t";
 	}
 	archivoOut << endl;
+	salidaDebug << endl;
 }
 
 void imprimeNoDominadas(subproblema *subproblemas)	//Tiene que computar soluciones de objetivo
@@ -354,7 +464,8 @@ void imprimeNoDominadas(subproblema *subproblemas)	//Tiene que computar solucion
 
 }
 
-void imprimeSoluciones(solucion * soluciones){
+void imprimeSoluciones(solucion * soluciones)
+{
 	for(int i = 0; i < n; i++)
 	{
 		if(soluciones[i].dimensiones!=0)
@@ -364,7 +475,8 @@ void imprimeSoluciones(solucion * soluciones){
 	}
 }
 
-void imprimeSoluciones(subproblema * subproblemas){
+void imprimeSoluciones(subproblema * subproblemas)
+{
 	for(int i = 0; i < n; i++)
 	{
 		if(subproblemas[i].x.dimensiones!=0)
@@ -374,7 +486,8 @@ void imprimeSoluciones(subproblema * subproblemas){
 	}
 }
 
-void compruebaMejoresSubproblemas(){
+void compruebaMejoresSubproblemas()
+{
 	if(mejoresSubproblemas[0].x.dimensiones==0)
 	{
 		for (int i = 0; i < n; i++) mejoresSubproblemas[i] = subp[i];
@@ -382,21 +495,82 @@ void compruebaMejoresSubproblemas(){
 	}
 	for (int i = 0; i < n; i++)
 	{
-		if(tchebycheff(subp[i]) < tchebycheff(mejoresSubproblemas[i]))
+		if(tchebycheff(subp[i].x, subp[i].id) < tchebycheff(mejoresSubproblemas[i].x, mejoresSubproblemas[i].id))
 		{
 			mejoresSubproblemas[i] = subp[i];
 		}
 	}
 }
 
-void graficaGNUplot(){
+void graficaGNUplot()
+{
 	//Se crea una tubería para acceder a GNUplot
 	FILE *pipe = popen("gnuplot -persist","w");
 
 	//Ajustes
 	fprintf(pipe, "set palette gray negative\n");
+	fprintf(pipe, "set title 'Mejores resultados del algoritmo'\n");
 
 	//Graficar
-	fprintf(pipe, "plot 'salidaTOP.out'\n");
+	fprintf(pipe, "plot [0:1][-1:2] 'salidaTOP.out'\n");
 	fflush(pipe);
 }
+
+void graficaSalida()
+{
+	archivoZ << z.vector[0] << "\t" << z.vector[1]<<endl;	//Guarda Z
+	//Se crea una tubería para acceder a GNUplot
+	FILE *pipe = popen("gnuplot -persist","w");
+
+	//Ajustes
+	fprintf(pipe, "set palette gray negative\n");
+	fprintf(pipe, "set title 'Salida.out'\n");
+
+	//Graficar
+	fprintf(pipe, "plot 'salida.out'\n");
+    fprintf(pipe, "replot 'salidaZ.out' lt rgb 'red'\n");
+	fflush(pipe);
+}
+
+void graficaIteracion(FILE *pipe2)
+{
+	std::ofstream iteracion("iteracion.out", std::ofstream::trunc);
+	for(int l = 0; l < n; l++){
+		solucion th = busquedaAobjetivo(subp[l].x);
+		for (int t = 0; t < 2; t++) {
+			iteracion << th.vector[t]<<"\t";
+		}
+		iteracion << endl;
+	}
+
+	//Graficar
+	fprintf(pipe2, "clear\n");
+	fprintf(pipe2, "replot 'iteracion.out' lt rgb 'blueviolet' pointtype 13 notitle\n");
+	fprintf(pipe2, "replot 'all_popm_seed1.out' lt rgb 'coral' pointtype 22 notitle\n");
+
+	fflush(pipe2);
+	usleep(300000);
+}
+
+void graficaIteracion1(FILE *pipe2)
+{
+	std::ofstream iteracion("iteracion.out", std::ofstream::trunc);
+	for(int l = 0; l < n; l++){
+		solucion th = busquedaAobjetivo(subp[l].x);
+		for (int t = 0; t < 2; t++) {
+			iteracion << th.vector[t]<<"\t";
+		}
+		iteracion << endl;
+	}
+
+	//Ajustes
+	fprintf(pipe2, "set palette gray negative\n");
+	fprintf(pipe2, "set title 'Iteracion'\n");
+
+	//Graficar
+	fprintf(pipe2, "plot 'iteracion.out'\n");
+
+	fflush(pipe2);
+	usleep(300000);
+}
+

@@ -20,12 +20,12 @@ class solucion
 	float *vector; 									//Posición de la solución en el espacio
 	int dimensiones;
     solucion();
-    solucion(const solucion *a);
-    solucion(float vectorp[],int p);						//Constructor dado un vector
+    solucion(solucion *a);
+    solucion(float vectorp[],int p);				//Constructor dado un vector y las dimensiones del mismo
     solucion(int max, int min, int dimensiones);	//Constructor de una solución aleatoria
-    solucion operator - (solucion const &obj);		//Operador resta
-    solucion operator + (solucion const &obj);		//Operador suma
-    solucion operator * (float const &obj);			//Operador multiplicación escalar
+    solucion operator - (solucion obj);				//Operador resta
+    solucion operator + (solucion obj);				//Operador suma
+    solucion operator * (float obj);				//Operador multiplicación escalar
     int domina(solucion s);							//Devuelve 1 si domina a la solución, 0 si no la domina y -1 si no corresponden las dimensiones
 };
 
