@@ -248,8 +248,8 @@ void ejecucion(){
 		imprimeSoluciones(subp);
 		compruebaMejoresSubproblemas();
 		//graficaIteracion(pipe2);
-		//[DEBUG] IMPRIME SOLUCIONES DE TODOS LOS SUBPROBLEMAS
-		//salidaDebug << "===SUBPROBLEMAS==="<< endl;
+		/*[DEBUG] IMPRIME SOLUCIONES DE TODOS LOS SUBPROBLEMAS
+		salidaDebug << "===SUBPROBLEMAS==="<< endl;
 		for (int i = 0; i < n; ++i)
 		{
 			cout << "Subproblema "<<i<<": "<<endl;
@@ -261,7 +261,7 @@ void ejecucion(){
 			}
 			cout<<endl;
 			//salidaDebug<<endl<<endl;
-		}
+		}*/
 	}
 	graficaIteracion(pipe2);
 
@@ -551,7 +551,7 @@ void graficaIteracion(FILE *pipe2)
 	//Graficar
 	fprintf(pipe2, "clear\n");
 	fprintf(pipe2, "replot 'iteracion.out' lt rgb 'blueviolet' pointtype 13 notitle\n");
-	fprintf(pipe2, "replot 'all_popm_seed1.out' lt rgb 'coral' pointtype 22 notitle\n");
+	fprintf(pipe2, "replot 'aComparar.out' lt rgb 'coral' pointtype 22 notitle\n");
 
 	fflush(pipe2);
 	usleep(300000);
