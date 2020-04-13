@@ -12,21 +12,21 @@ using namespace std;
 
 int n; 					//Número de subproblemas
 int g; 					//Número de generaciones
-int dim; 					//Número de dimensiones
+int dim; 				//Número de dimensiones
 
 float f; 				//Parámetro de mutación
 float cr; 				//Parámetro de cruce
 
-float vecindad; 				//Porcentaje de vecinos de cada subproblema
+float vecindad; 		//Porcentaje de vecinos de cada subproblema
 
-float ls; 					//Límite superior
-float li; 					//Límite inferior
+float ls; 				//Límite superior
+float li; 				//Límite inferior
 
 float semilla;
 
 float compensacion_angular;
 
-subproblema * subp;				//Puntero al vector de subproblemas (tamaño n)
+subproblema * subp;					//Puntero al vector de subproblemas (tamaño n)
 
 solucion z;							//Mejor solución ideal encontrada
 subproblema * mejoresSubproblemas;	//Mejores subproblemas encontrados
@@ -40,7 +40,7 @@ void parametrosDeEntrada();
 void inicializacion(int n, int dim, int max, int min);
 void operacionED();
 void ejecucion();
-double tchebycheff(solucion soluc, peso peso);							//Devuelve la distancia de tchebycheff
+double tchebycheff(solucion soluc, peso peso);					//Devuelve la distancia de tchebycheff
 void imprimeSolucion(solucion s);								//Escribe en el archivo de salida la solución(Si no es de objetivo lo convierte)
 void imprimeNoDominadas(subproblema *subproblemas);				//Imprime el conjunto de soluciones no dominadas
 void imprimeSoluciones(solucion * soluciones);					//Imprime un conjunto de soluciones
@@ -130,22 +130,8 @@ void inicializacion(int n, int dim, int max, int min)
     float paso = (float)1/(float)(n-1);
     for(int i =0; i<n ;i++)
     {
-        //pesos[i] = peso(1-paso*i,0+paso*i);
     	pesos[i] = peso(0+paso*i,1-paso*i);
     }
-
-    /*[DEBUG] Muestra todos los pesos
-    salidaDebug << "EJECUCIÓN CON 30 SUBPROBLEMAS 100 GENERACIONES Y 30 DIMENSIONES / F = 0.5 /CR = 0.5 /VECINDAD = 20%"<<endl;
-    salidaDebug<<"===INICIALIZACIÓN==="<<endl;
-    salidaDebug << "===PESOS==="<<endl;
-    for (int i = 0; i < n; i++)
-    {
-		for (int j = 0; j < 2; ++j)
-		{
-			salidaDebug << pesos[i].vector[j] << "\t";
-		}
-		salidaDebug << endl;
-	}*/
 
 
     //Creación de subproblemas y asignación de pesos
@@ -163,45 +149,8 @@ void inicializacion(int n, int dim, int max, int min)
     	subp[i] = subproblemas[i];
     }
 
-    /*[DEBUG]IMPRIME LAS SOLUCIONES DE TODOS LOS SUBPROBLEMAS
-    salidaDebug << "===SUBPROBLEMAS==="<< endl << "VALORES ALEATORIOS PARA ESPACIO DE BÚSQUEDA" << endl;
-    for (int i = 0; i < n; ++i)
-    {
-    	salidaDebug << "Subproblema "<<i<<": "<<endl;
-		for (int j = 0; j < dim; ++j)
-		{
-			cout << subproblemas[i].x.vector[j] << ",";
-			salidaDebug << subproblemas[i].x.vector[j] << "\t";
-		}
-		cout<<endl;
-		salidaDebug<<endl<<endl;
-	}*/
 
     int n_vecinos = (int)((vecindad/100)*n);
-    /*[DEBUG]IMPRIME TODOS LOS VECINOS
-    salidaDebug << "===VECINOS==="<< endl << "HACE REFERENCIA A SU POSICIÓN EN EL ARRAY" << endl << "DESE CUENTA DE QUE NO SALEN ORDENADOS"<<endl;
-	for (int i = 0; i < n; ++i)
-	{
-		salidaDebug << "Subproblema "<<i<<": "<<endl;
-		for (int j = 0; j < n_vecinos; ++j)
-		{
-			salidaDebug << subproblemas[i].grupo[j] << "\t";
-		}
-		salidaDebug<<endl;
-	}*/
-    /*[DEBUG]IMPRIME LAS SOLUCIONES DE TODOS LOS SUBPROBLEMAS OBJETIVO
-	for (int i = 0; i < n; ++i)
-	{
-		solucion s = busquedaAobjetivo(subproblemas[i].x);
-		cout << "Subproblema " << i << ":";
-		for (int j = 0; j < dim; ++j)
-		{
-			cout << s.vector[j] << ",";
-			archivoOut << s.vector[j] << "\t";
-		}
-		cout<<endl;
-		archivoOut<<endl;
-	}*/
 
 
     //Búsqueda de la mejor solución de la inicialización (z)
@@ -223,9 +172,6 @@ void inicializacion(int n, int dim, int max, int min)
 		}
     }
 
-   /*[DEBUG] IMPRIME EL VECTOR Z
-    salidaDebug << endl << "Solución Z primera iteración: " << z.vector[0] << "\t" << z.vector[1]<< endl << endl;
-    graficaSalida();*/
 
 
 }
@@ -238,30 +184,13 @@ void ejecucion(){
 	imprimeSoluciones(subp);
 	graficaIteracion1(pipe2);
 	compruebaMejoresSubproblemas();
-	//salidaDebug << "=======EJECUCIÓN DEL PROGRAMA=======" <<endl;
 	for (int i = 0; i < g; i++)
 	{
 		cout<< "GENERACIÓN: " << i <<endl;
-		//salidaDebug<< "GENERACIÓN: " << i <<endl;
 		operacionED();
 		cout<<"z: "<<z.vector[0]<<","<<z.vector[1]<<endl;
 		imprimeSoluciones(subp);
 		compruebaMejoresSubproblemas();
-		//graficaIteracion(pipe2);
-		/*[DEBUG] IMPRIME SOLUCIONES DE TODOS LOS SUBPROBLEMAS
-		salidaDebug << "===SUBPROBLEMAS==="<< endl;
-		for (int i = 0; i < n; ++i)
-		{
-			cout << "Subproblema "<<i<<": "<<endl;
-			//salidaDebug << "Subproblema "<<i<<": "<<endl;
-			for (int j = 0; j < dim; ++j)
-			{
-				cout << subp[i].x.vector[j] << ",";
-				//salidaDebug << subp[i].x.vector[j] << "\t";
-			}
-			cout<<endl;
-			//salidaDebug<<endl<<endl;
-		}*/
 	}
 	graficaIteracion(pipe2);
 
@@ -383,22 +312,12 @@ void operacionED()	//Mutación y cruce de evolución diferencial
 		}
 
 	}
-	/*//[DEBUG]Imprime todas las soluciones
-	for(int i = 0; i < n; i++)
-	{
-		cout<< "Sub "<<i<<": ";
-		for(int j = 0;j < 2;j++)
-		{
-			cout << busquedaAobjetivo(subp[i].x).vector[j] << ",";
-		}
-		cout << endl;
-	}*/
 }
 
 double tchebycheff(solucion soluc, peso peso)	//Dado un subproblema calcula la distancia de tchebycheff de su solución hasta la solución Z(La mejor ideal encontrada hasta ahora) para un peso.
 {
-	double componenteX = 0.0;	//Variable de retorno
-	double componenteY = 0.0;	//Variable auxiliar
+	double componenteX = 0.0;		//Variable de retorno
+	double componenteY = 0.0;		//Variable auxiliar
 	solucion solucionObj;			//Variable auxiliar
 
 	//A continuación trasladamos nuestra solución desde el espacio de búsqueda al espacio de objetivos.
@@ -406,7 +325,7 @@ double tchebycheff(solucion soluc, peso peso)	//Dado un subproblema calcula la d
 
 	//Cálculo de la función de tchebycheff para las dos dimensiones del espacio de objetivos
 	componenteX = peso.vector[0] * abs(solucionObj.vector[0] - (z.vector[0] + compensacion_angular));	// lambda[0] * |f1 - z[0]|  coordenada x
-	componenteY = peso.vector[1] * abs(solucionObj.vector[1] - z.vector[1]);	// lambda[1] * |f2 - z[1]|  coordenada y
+	componenteY = peso.vector[1] * abs(solucionObj.vector[1] - z.vector[1]);							// lambda[1] * |f2 - z[1]|  coordenada y
 
 	//Se devuelve el componente que sea mayor
 	if(componenteX > componenteY)
@@ -428,13 +347,11 @@ void imprimeSolucion(solucion s)
 	for(int b = 0; b < a.dimensiones; b++)
 	{
 		archivoOut << a.vector[b] << "\t";
-		//salidaDebug << a.vector[b] << "\t";
 	}
 	archivoOut << endl;
-	//salidaDebug << endl;
 }
 
-void imprimeNoDominadas(subproblema *subproblemas)	//Tiene que computar soluciones de objetivo
+void imprimeNoDominadas(subproblema *subproblemas)			//Tiene que computar soluciones de objetivo
 {
 	int contador = 0;										//Servirá para almacenar las soluciones consecutivamente en el vector
 	solucion * res = new solucion[n];						//Soluciones de respuesta no dominadas
