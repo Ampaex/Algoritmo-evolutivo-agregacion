@@ -5,6 +5,6 @@ Evolutionary algorithm for multiple targets based on aggregation for the `univer
 
 - [Enunciado del ejercicio](./trabajo_evaluacion.pdf)
 
-- [Documento elaborado](./Algoritmo_ASC-Antonio_Vázquez_Pérez.pdf)
+- [Documento elaborado](./Algoritmo%20ASC-Antonio%20Vázquez%20Pérez.pdf)
 
 **Antonio Vázquez Pérez**
