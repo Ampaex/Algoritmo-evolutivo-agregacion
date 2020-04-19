@@ -10,21 +10,21 @@
 using namespace std;
 
 
-int n; 					//Número de subproblemas
-int g; 					//Número de generaciones
-int dim; 				//Número de dimensiones
+int n = 200; 					//Número de subproblemas
+int g = 50; 					//Número de generaciones
+int dim = 30; 				//Número de dimensiones
 
-float f; 				//Parámetro de mutación
-float cr; 				//Parámetro de cruce
+float f = 0.55; 				//Parámetro de mutación
+float cr = 0.65; 				//Parámetro de cruce
 
-float vecindad; 		//Porcentaje de vecinos de cada subproblema
+float vecindad = 40; 		//Porcentaje de vecinos de cada subproblema
 
-float ls; 				//Límite superior
-float li; 				//Límite inferior
+float ls = 1; 				//Límite superior
+float li = 0; 				//Límite inferior
 
-float semilla;
+float semilla = 13;
 
-float compensacion_angular;
+float compensacion_angular = -1.05;
 
 subproblema * subp;					//Puntero al vector de subproblemas (tamaño n)
 
@@ -41,7 +41,7 @@ void inicializacion(int n, int dim, int max, int min);
 void operacionED();
 void ejecucion();
 double tchebycheff(solucion soluc, peso peso);					//Devuelve la distancia de tchebycheff
-void imprimeSolucion(solucion s);								//Escribe en el archivo de salida la solución(Si no es de objetivo lo convierte)
+void imprimeSolucion(solucion s);								//Escribe en el archivo de salida la solución
 void imprimeNoDominadas(subproblema *subproblemas);				//Imprime el conjunto de soluciones no dominadas
 void imprimeSoluciones(solucion * soluciones);					//Imprime un conjunto de soluciones
 void imprimeSoluciones(subproblema * subproblemas);				//Imprime las soluciones de un conjunto de problemas
@@ -61,7 +61,7 @@ int main()
 	archivoBest.open("salidaTOP.out");
 	iteracion.open("iteracion.out");
 
-	parametrosDeEntrada();			//Recogida de parámetros de entrada
+	//parametrosDeEntrada();			//Recogida de parámetros de entrada
 	srand(semilla);					//Inicialización de los números aleatorios con semilla
 	inicializacion(n, dim, ls, li);	//Inicialización del problema
 	ejecucion();
@@ -150,9 +150,6 @@ void inicializacion(int n, int dim, int max, int min)
     }
 
 
-    int n_vecinos = (int)((vecindad/100)*n);
-
-
     //Búsqueda de la mejor solución de la inicialización (z)
     solucion temp;
     float f[2] = {200.0,200.0};
@@ -191,6 +188,7 @@ void ejecucion(){
 		cout<<"z: "<<z.vector[0]<<","<<z.vector[1]<<endl;
 		imprimeSoluciones(subp);
 		compruebaMejoresSubproblemas();
+		//graficaIteracion(pipe2);
 	}
 	graficaIteracion(pipe2);
 
@@ -273,16 +271,7 @@ void operacionED()	//Mutación y cruce de evolución diferencial
 		solucion trial_solution = solucion(trial_vector, previa.dimensiones);							//Creación de la nueva solución con los valores cruzados.
 
 
-		//----------------------------------------EVALUACIÓN DE LA NUEVA SOLUCIÓN, ACTUALIZACIÓN DE Z, Y EVALUACIÓN PARA LOS SUBPROBLEMAS VECINOS-----------------------
-
-		//Comparación de la nueva solución con la anterior (Van dentro de un subproblema para que tchebycheff pueda coger su vector peso)
-		if(tchebycheff(trial_solution, subp[i].id) < tchebycheff(previa, subp[i].id))
-		{
-			for(int g = 0; g < dim; g++)
-			{
-				subp[i].x.vector[g] = trial_solution.vector[g];	//Si lo mejora, sustituye la solución de este subproblema por la nueva mejorada
-			}
-		}
+		//---------------------------------------- ACTUALIZACIÓN DE Z, Y EVALUACIÓN PARA LOS SUBPROBLEMAS VECINOS-----------------------
 
 		//Comprobación de Z
 		solucion temp = busquedaAobjetivo(trial_solution);	//Trasladamos la nueva solución al espacio de objetivos y la guardamos en temp
@@ -297,7 +286,7 @@ void operacionED()	//Mutación y cruce de evolución diferencial
 			z = solucion(tempz,2);							//Construye y guarda la nueva solución Z, dado el array y las dimensiones del array
 		}
 
-		//Comprueba si la solución encontrada también mejora a la de los vecinos, recorre todos los vecinos almacenados en el grupo de vecinos del subproblema.
+		//Comprueba si la solución encontrada también mejora a la de los vecinos(includido el mismo), recorre todos los vecinos almacenados en el grupo de vecinos del subproblema.
 		for (int j = 0; j < num_vecinos; j++)
 		{
 			int indice = subp[i].grupo[j];							//Posición del subproblema a comprobar, grupo es un puntero a el array de vecinos.
@@ -467,6 +456,7 @@ void graficaIteracion(FILE *pipe2)
 
 	//Graficar
 	fprintf(pipe2, "clear\n");
+	fprintf(pipe2, "replot 'PF.dat' linecolor rgb 'light-green' linetype 5 notitle\n");
 	fprintf(pipe2, "replot 'iteracion.out' lt rgb 'blueviolet' pointtype 13 notitle\n");
 	fprintf(pipe2, "replot 'aComparar.out' lt rgb 'coral' pointtype 22 notitle\n");
 
@@ -490,7 +480,7 @@ void graficaIteracion1(FILE *pipe2)
 	fprintf(pipe2, "set title 'Iteracion'\n");
 
 	//Graficar
-	fprintf(pipe2, "plot 'iteracion.out'\n");
+	fprintf(pipe2, "plot 'iteracion.out' notitle\n");
 
 	fflush(pipe2);
 	usleep(300000);
